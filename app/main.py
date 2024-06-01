@@ -1,144 +1,258 @@
 import sys
-sys.path.insert(1, './emp')
-sys.path.insert(2, './dept')
+import cx_Oracle
 
-from crud_e import update_emp,insert_emp,delete_emp
-from crud_d import update_dept,insert_dept,delete_dept
+username = 'SYSTEM'
+password = 'admin'
+host = 'localhost'
+port = '1521'
+service_name = 'XE'
 
-import customtkinter
-import tkinter as tk
-import connect
+dsn = cx_Oracle.makedsn(host, port, service_name)
 
+connection = cx_Oracle.connect(username, password, dsn)
 
-#-----------------------------------------------------------#
+cursor = connection.cursor()
 
-root = tk.Tk()
-root.geometry('500x500')
-root.title('DB Project')
-
-def switch(indicator_lb,page):
-    for child in options_fm.winfo_children():
-        if isinstance(child,tk.Label):
-            child['bg'] = root.cget('bg')
-    indicator_lb['bg']='#0097e8'
-
-    for fm in main_fm.winfo_children():
-        fm.destroy()
-        root.update()
-
-    page()
-
-options_fm = tk.Frame(root)
-
-emp_btn = tk.Button(options_fm, text='Employees',font=('Arial',13),bd=0,fg='#0097e8',activeforeground='#0097e8',command=lambda :switch(emp_indicator_lb,emp_page))
-emp_btn.place(x=0,y=0,width=125)
-
-emp_indicator_lb = tk.Label(options_fm)
-emp_indicator_lb.place(x=22,y=30,width=80,height=2)
-
-dept_btn = tk.Button(options_fm, text='Department',font=('Arial',13),bd=0,fg='#0097e8',activeforeground='#0097e8',command=lambda :switch(dept_indicator_lb,dept_page))
-dept_btn.place(x=125,y=0,width=125)
-
-dept_indicator_lb = tk.Label(options_fm)
-dept_indicator_lb.place(x=147,y=30,width=80,height=2)
-
-options_fm.pack(pady=5)
-
-options_fm.pack_propagate(False)
-options_fm.configure(width=500,height=35)
-
-def emp_page():
-    emp_page_fm=tk.Frame(main_fm)
+def insert_emp():
+    print("Escribe el id del empleado:")
+    empno=int(input())
+    print("Escribe el nombre del empleado:")
+    e_name=input()
+    print("Escribe el trabajo del empleado:")
+    e_job=input()
+    print("Escribe el id del manager del empleado:")
+    e_mgr=int(input())
     
-    pos = 0
+    print("Escribe el día de contartación:")
+    day=int(input())
+    print("Escribe el mes de contartación:")
+    month=int(input())
+    print("Escribe el año de contartación:")
+    year=int(input())
+    print("Escribe el salario del empleado:")
+    e_sal=int(input())
+    print("Escribe la comisión del empleado:")
+    e_comm=int(input())
+    print("Escribe el departamento del empleado:")
+    e_dept=int(input())
 
-    emp_page_lb_id = tk.Label(emp_page_fm, text='ID',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_id.place(x=0,y=pos)
-    emp_page_insrt_id = tk.Entry(emp_page_fm)
-    emp_page_insrt_id.place(x=0,y=pos+35)
-    pos = pos+70
-    emp_id = emp_page_insrt_id.get()
+    e_date = (f"{day}-{month}-{year}")
+    try:
+        cursor.callproc('Add_emp',(empno,e_name,e_job, e_mgr,e_date,e_sal, e_comm,e_dept))
+        print("Completado")
+    except cx_Oracle.DatabaseError as e:
+            error, = e.args
+            if error.code == 20001:
+                print("Error: El ID especificado ya existe en la base de datos.")
+            else:
+                print("Error inesperado:", error.message)
 
-    emp_page_lb_nm = tk.Label(emp_page_fm, text='Nombre',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_nm.place(x=0,y=pos)
-    emp_page_insrt_nm = tk.Entry(emp_page_fm)
-    emp_page_insrt_nm.place(x=0,y=pos+35)
-    pos = pos+70
-    emp_name = emp_page_insrt_nm.get()
+def update_emp():
+    print("ID del empleado:")
+    try:
+        empno = int(input())
+        print("Campo a cambiar:")
+        print("1 Nombre del empleado")
+        print("2 Trabajo del empleado")
+        print("3 Manager del empleado")
+        print("4 Fecha de contratacipon")
+        print("5 Salario")
+        print("6 Comisión")
+        print("7 Departamento")
+        opt = int(input())
+        camp = ""
+        if(opt==1):
+            camp="ENAME"
+        elif(opt==2):
+            camp="JOB"
+        elif(opt==3):
+            camp="MGR"
+        elif(opt==4):
+            camp="HIREDATE"
+        elif(opt==5):
+            camp="SAL"
+        elif(opt==6):
+            camp="COMM"
+        elif(opt==7):
+            camp="DEPTNO"
+        else:
+            print("NO se conoce la opción")
+            exit()
+        if(opt!=1 and opt!=2 and opt!=4):
+            try:
+                print("Nuevo valor:")
+                new = int(input())
+            except:
+                print("No es un numero")
+                exit()
+        elif(opt==4):
+            print("NUEVA FECHA:")
+            print("Ingresa día:")
+            try:
+                day = int(input())
+            except:
+                print("No es un numero")
+                exit()
+            print("Ingresa mes:")
+            try:
+                month = int(input())
+            except:
+                print("No es un numero")
+                exit()
+            print("Ingresa año:")
+            try:
+                year = int(input())
+            except:
+                print("No es un numero")
+                exit()
+            new = (f"{day}-{month}-{year}")
+        else:
+            print("Nuevo valor:")
+            new = input()
+        try:
+            cursor.callproc('Update_emp',(empno,camp,new))
+            print("Completado")
+        except cx_Oracle.DatabaseError as e:
+            error, = e.args
+            if error.code == 20001:
+                print("Error: El ID especificado no existe en la base de datos.")
+            else:
+                print("Error inesperado:", error.message)
+    except:
+        print("No es un numero")
 
-    emp_page_lb_job = tk.Label(emp_page_fm, text='Job',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_job.place(x=0,y=pos)
-    emp_page_insrt_job = tk.Entry(emp_page_fm)
-    emp_page_insrt_job.place(x=0,y=pos+35)
-    pos = pos+70
-    emp_job = emp_page_insrt_job.get()
+def delete_emp():
+    print("ID del empleado:")
+    try:
+        empno = int(input())
+        try:
+            cursor.callproc('Delete_emp',[empno])
+            print("Completado")
+        except cx_Oracle.DatabaseError as e:
+            error, = e.args
+            if error.code == 20001:
+                print("Error: El ID especificado no existe en la base de datos.")
+            else:
+                print("Error inesperado:", error.message)
+    except:
+        print("No es un numero")
 
-    emp_page_lb_mgr = tk.Label(emp_page_fm, text='Manager ID',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_mgr.place(x=0,y=pos)
-    emp_page_insrt_mgr = tk.Entry(emp_page_fm)
-    emp_page_insrt_mgr.place(x=0,y=pos+35)
-    pos = pos+70
-    emp_mgr = emp_page_insrt_mgr.get()
 
-    emp_page_lb_day = tk.Label(emp_page_fm, text='Día de contratación',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_day.place(x=0,y=pos)
-    emp_page_insrt_day = tk.Entry(emp_page_fm)
-    emp_page_insrt_day.place(x=0,y=pos+35)
-    pos = pos+70
-    emp_day = emp_page_insrt_day.get()
+def insert_dept():
+    print("Incerte:")
+    try:
+        print("ID del departamento:")
+        try:
+            deptno = int(input())
+        except:
+            print("No es un numero")
+        print("Nombre del departamento:")
+        dname = input()
+        print("Localización del departamento:")
+        loc = input()
 
-    emp_page_lb_month = tk.Label(emp_page_fm, text='Mes de contratación',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_month.place(x=0,y=pos)
-    emp_page_insrt_month = tk.Entry(emp_page_fm)
-    emp_page_insrt_month.place(x=0,y=pos+35)
-    pos = pos+70
-    emp_month = emp_page_insrt_month.get()
+        cursor.callproc('Add_depto',(deptno,dname,loc))
 
-    pos = 0
+        print("Completado")
+    except cx_Oracle.DatabaseError as e:
+            error, = e.args
+            if error.code == 20001:
+                print("Error: El ID especificado ya existe en la base de datos.")
+            elif error.code == 20002:
+                print("Error: El ID especificado tiene que ser divisible entre 10.")
+            else:
+                print("Error inesperado:", error.message)
 
-    emp_page_lb_year = tk.Label(emp_page_fm, text='Año de contratación',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_year.place(x=200,y=pos)
-    emp_page_insrt_year = tk.Entry(emp_page_fm)
-    emp_page_insrt_year.place(x=200,y=pos+35)
-    pos = pos+70
-    emp_year = emp_page_insrt_year.get()
+def update_dept():
+    print("ID del departamento:")
+    try:
+        deptno = int(input())
+        print("Campo a cambiar:")
+        print("1 Nombre del departamento")
+        print("2 Localización del departamento")
+        opt = int(input())
+        camp = ""
+        if(opt==1):
+            camp="DNAME"
+        elif(opt==2):
+            camp="LOC"
+        else:
+            print("NO se conoce la opción")
+            exit()
+            
+        print("Nuevo valor:")
+        new = input()
+        try:
+            cursor.callproc('Update_depto',(deptno,camp,new))
+            print("Completado")
+        except cx_Oracle.DatabaseError as e:
+            error, = e.args
+            if error.code == 20001:
+                print("Error: El ID especificado no existe en la base de datos.")
+            else:
+                print("Error inesperado:", error.message)
+    except:
+        print("No es un numero")
 
-    emp_page_lb_sal = tk.Label(emp_page_fm, text='Salario',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_sal.place(x=200,y=pos)
-    emp_page_insrt_sal = tk.Entry(emp_page_fm)
-    emp_page_insrt_sal.place(x=200,y=pos+35)
-    pos = pos+70
-    emp_sal = emp_page_insrt_sal.get()
+def delete_dept():
+    print("ID del departamento:")
+    try:
+        deptno = int(input())
+        try:
+            cursor.callproc('Delete_depto',[deptno])
+            print("Completado")
+        except cx_Oracle.DatabaseError as e:
+            error, = e.args
+            if error.code == 20001:
+                print("Error: El ID especificado no existe en la base de datos.")
+            else:
+                print("Error inesperado:", error.message)
+    except:
+        print("No es un numero")
 
-    emp_page_lb_comm = tk.Label(emp_page_fm, text='Comisión',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_comm.place(x=200,y=pos)
-    emp_page_insrt_comm = tk.Entry(emp_page_fm)
-    emp_page_insrt_comm.place(x=200,y=pos+35)
-    pos = pos+70
-    emp_comm = emp_page_insrt_comm.get()
-
-    emp_page_lb_dept = tk.Label(emp_page_fm, text='Departamento',font=('Arial',13),bd=0,fg='#0097e8')
-    emp_page_lb_dept.place(x=200,y=pos)
-    emp_page_insrt_dept = tk.Entry(emp_page_fm)
-    emp_page_insrt_dept.place(x=200,y=pos+35)
-    pos = pos+70
-    emp_dept = emp_page_insrt_dept.get()
-
-    emp_page_sumbit = tk.Button(emp_page_fm, text='Subi empleado',bg='white',font=('Arial',13),bd=0,fg='#0097e8',activeforeground='#0097e8',command=lambda :insert_emp(emp_id,emp_name,emp_job,emp_mgr,emp_day,emp_month,emp_year,emp_sal,emp_comm,emp_dept))
-    emp_page_sumbit.place(x=200,y=pos+35)
-
-    emp_page_fm.pack(fill=tk.BOTH, expand=True)
-
-def dept_page():
-    dept_page_fm=tk.Frame(main_fm)
-    dept_page_lb = tk.Label(dept_page_fm, text='Inser',font=('Arial',13),bd=0,fg='#0097e8')
-    dept_page_lb.pack(pady=80)
-    dept_page_fm.pack(fill=tk.BOTH, expand=True)
-
-main_fm= tk.Frame(root)
-main_fm.pack(fill=tk.BOTH, expand=True)
-
-root.mainloop()
+def select_num_emp_by_id():
+    print("ID del departamento:")
+    try:
+        deptno = int(input())
+        try:
+            numero_empleados = cursor.var(cx_Oracle.NUMBER)
+            cursor.execute("BEGIN :result := noEmp_depto(:id_dept); END;", result=numero_empleados, id_dept=deptno)
+            print("Total de empleados en ",deptno," es ",numero_empleados.getvalue())
+        except cx_Oracle.DatabaseError as e:
+            error, = e.args
+            if error.code == 20001:
+                print("Error: El ID especificado no existe en la base de datos.")
+            else:
+                print("Error inesperado:", error.message)
+    except:
+        print("No es un numero")
+        
+opt=0
+while(opt!=9):
+    print("Menú")
+    print("1.-Incertar empleado")
+    print("2.-Incertar departamento")
+    print("3.-Actualizar empleado")
+    print("4.-Actualizar departamento")
+    print("5.-Eliminar empleado")
+    print("6.-Eliminar departamento")
+    print("7.-Ver número de empleados asignados a departamento")
+    print("Incerte una opción:")
+    opt=int(input())
+    if(opt==1):
+        insert_emp()
+    elif(opt==2):
+        insert_dept()
+    elif(opt==3):
+        update_emp()
+    elif(opt==4):
+        update_dept()
+    elif(opt==5):
+        delete_emp()
+    elif(opt==6):
+        delete_dept()
+    elif(opt==7):
+        select_num_emp_by_id()
 
 cursor.close()
 connection.close()
